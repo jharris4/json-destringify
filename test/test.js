@@ -4,8 +4,9 @@ const simpleValues = [
   { value: 'a', expected: 'a' },
   { value: 3, expected: 3 },
   { value: true, expected: true },
-  { value: '{}', expected: {} },
-  { value: '[]', expected: [] }
+  { value: [], expected: [] },
+  { value: {}, expected: {} },
+  { value: null, expected: null }
 ];
 
 const rootValues = [
@@ -19,10 +20,12 @@ describe('json-destringify', () => {
     for (let i = 0; i < count; i++) {
       stringified = JSON.stringify(stringified);
     }
-    const valueCount = typeof expected === 'object' ? count + 1 : count;
     const { result, map } = destringify(stringified);
+    // console.log('#### value: ', value);
+    // console.log('#### result: ', result);
+    // console.log('#### map: ', map);
     expect(result).toEqual(expected);
-    expect(map).toEqual({ count: valueCount });
+    expect(map).toEqual({ count });
     expect(restringify({ result, map })).toEqual(stringified);
   };
 
@@ -39,11 +42,10 @@ describe('json-destringify', () => {
     const { result, map } = destringify(stringified);
     const json = restringify({ result, map });
 
-    const valueCount = typeof expected === 'object' ? count + 1 : count;
     expect(result).toEqual(Array.isArray(root) ? [ ...root, expected ] : { ...root, [key]: expected });
     expect(map).toEqual({
       count: rootCount,
-      ...(valueCount > 0 ? { children: Array.isArray(root) ? [{ count: valueCount }] : { [key]: { count: valueCount } } } : {})
+      ...(count > 0 ? { children: Array.isArray(root) ? [{ count }] : { [key]: { count } } } : {})
     });
     expect(json).toEqual(stringified);
   };
@@ -65,11 +67,10 @@ describe('json-destringify', () => {
     const { result, map } = destringify(stringifiedRoot);
     const json = restringify({ result, map });
 
-    const valueCount = typeof expected === 'object' ? count + 1 : count;
     const expectedMiddleResult = Array.isArray(middleRoot) ? [ ...middleRoot, expected ] : { ...middleRoot, [middleKey]: expected };
     const expectedResult = Array.isArray(root) ? [ ...root, expectedMiddleResult ] : { ...root, [key]: expectedMiddleResult };
-    const expectedMiddleMapChildren = valueCount > 0 ? { children: Array.isArray(middleRoot) ? [{ count: valueCount }] : { [middleKey]: { count: valueCount } } } : {};
-    const expectedMapChildren = middleCount > 0 || valueCount > 0 ? { children: Array.isArray(root) ? [{ count: middleCount, ...expectedMiddleMapChildren }] : { [key]: { count: middleCount, ...expectedMiddleMapChildren } } } : {};
+    const expectedMiddleMapChildren = count > 0 ? { children: Array.isArray(middleRoot) ? [{ count }] : { [middleKey]: { count } } } : {};
+    const expectedMapChildren = middleCount > 0 || count > 0 ? { children: Array.isArray(root) ? [{ count: middleCount, ...expectedMiddleMapChildren }] : { [key]: { count: middleCount, ...expectedMiddleMapChildren } } } : {};
     const expectedMap = { count: rootCount, ...expectedMapChildren };
     expect(result).toEqual(expectedResult);
     expect(map).toEqual(expectedMap);
