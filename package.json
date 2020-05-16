@@ -1,0 +1,28 @@
+{
+  "name": "json-destringify",
+  "version": "1.0.0",
+  "description": "Parses JSON while eagerly destringifying. A stringification map is returned to allow the parsed/cleaned result to be edited and converted back to the original stringified format",
+  "repository": "https://github.com/jharris4/json-parse-map.git",
+  "author": "jharris4 <harris.jb@gmail.com>",
+  "license": "MIT",
+  "files": [
+    "src",
+    "lib",
+    "es",
+    "dist"
+  ],
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "devDependencies": {
+    "@porterjs/babel-register": "^2.0.6",
+    "@porterjs/jest": "^2.0.6",
+    "@porterjs/lib": "^2.0.6"
+  },
+  "scripts": {
+    "build": "yarn porter-babel",
+    "deploy": "yarn porter-rollup",
+    "test": "yarn porter-jest",
+    "lint": "yarn porter-eslint"
+  },
+  "dependencies": {}
+}
