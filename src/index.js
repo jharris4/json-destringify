@@ -61,7 +61,7 @@ export const destringify = (target) => {
             };
           }
         }
-      } else {
+      } else if (target) {
         const keys = Object.keys(target);
         if (keys.length > 0) {
           const parsedPropertyValues = keys.reduce((m, k) => {
