@@ -1,32 +1,30 @@
 const MAP_DEFAULT = { count: 0 };
 
-export const restringify = ({ result, map }) => {
-  let json = result;
-
-  const { count, children } = map;
-  if (typeof children === 'object') {
-    if (Array.isArray(children)) {
-      json = [];
-      children.forEach((child, i) => {
-        json.push(restringify({ result: result[i], map: child }));
-      });
-    } else if (children) {
-      const keys = Object.keys(result);
-      json = {};
-      keys.forEach(key => {
-        if (children[key]) {
-          json[key] = restringify({ result: result[key], map: children[key] });
-        }
-        else {
-          json[key] = result[key];
-        }
-      });
+export const isMapEqual = (mapA, mapB) => {
+  const a = mapA || MAP_DEFAULT;
+  const b = mapB || MAP_DEFAULT;
+  if (
+    a.count !== b.count ||
+    typeof a.children !== typeof b.children ||
+    Array.isArray(a.children) !== Array.isArray(b.children)) {
+    return false;
+  }
+  if (typeof a.children === 'object') {
+    if (Array.isArray(a.children)) {
+      if (a.length !== b.length) {
+        return false;
+      }
+      return !a.children.some((child, i) => !isMapEqual(child, b.children[i]));
+    } else {
+      const aKeys = Object.keys(a.children);
+      const bKeys = Object.keys(b.children);
+      if (aKeys.length !== bKeys.length) {
+        return false;
+      }
+      return !aKeys.some(aKey => !isMapEqual(a.children[aKey], b.children[aKey])) && !bKeys.some(bKey => !isMapEqual(a.children[bKey], b.children[bKey]));
     }
   }
-  for (let i = 0; i < count; i++) {
-    json = JSON.stringify(json, null, '');
-  }
-  return json;
+  return true;
 };
 
 export const destringify = (target) => {
@@ -102,4 +100,33 @@ export const destringify = (target) => {
     result: parseResult,
     map: parseMap
   };
+};
+
+export const restringify = ({ result, map }) => {
+  let json = result;
+
+  const { count, children } = map;
+  if (typeof children === 'object' && typeof result === 'object') {
+    if (Array.isArray(children) && Array.isArray(result)) {
+      json = [];
+      children.forEach((child, i) => {
+        json.push(restringify({ result: result[i], map: child }));
+      });
+    } else if (children && result) {
+      const keys = Object.keys(result);
+      json = {};
+      keys.forEach(key => {
+        if (children[key]) {
+          json[key] = restringify({ result: result[key], map: children[key] });
+        }
+        else {
+          json[key] = result[key];
+        }
+      });
+    }
+  }
+  for (let i = 0; i < count; i++) {
+    json = JSON.stringify(json, null, '');
+  }
+  return json;
 };

@@ -1,4 +1,4 @@
-import { destringify, restringify } from '../src/index';
+import { destringify, restringify, isMapEqual } from '../src/index';
 
 const simpleValues = [
   { value: 'a', expected: 'a' },
@@ -523,5 +523,92 @@ describe('json-destringify', () => {
     });
     const json = restringify(inputResult);
     expect(input).toEqual(json);
+  });
+});
+
+describe('isMapEqual', () => {
+  it('does match two maps with same counts', () => {
+    const count = 0;
+    expect(isMapEqual({ count }, { count })).toBe(true);
+  });
+
+  it('does not match two maps with different counts', () => {
+    const countA = 0;
+    const countB = 1;
+    expect(isMapEqual({ count: countA }, { count: countB })).toBe(false);
+  });
+
+  it('does match two maps with same counts and same object children', () => {
+    const count = 0;
+    const children = { property: { count: 1 } };
+    expect(isMapEqual({ count, children: {...children} }, { count, children: {...children} })).toBe(true);
+  });
+
+  it('does not match two maps with same counts and different object children', () => {
+    const count = 0;
+    const childrenA = { property: { count: 1 } };
+    const childrenB = { property: { count: 2 } };
+    expect(isMapEqual({ count, children: childrenA }, { count, children: childrenB })).toBe(false);
+  });
+
+  it('does match two maps with same counts and same array children', () => {
+    const count = 0;
+    const children = [{ count: 1 }];
+    expect(isMapEqual({ count, children: {...children} }, { count, children: {...children} })).toBe(true);
+  });
+
+  it('does not match two maps with same counts and different array children', () => {
+    const count = 0;
+    const childrenA = [{ count: 1 }];
+    const childrenB = [{ count: 2 }];
+    expect(isMapEqual({ count, children: childrenA }, { count, children: childrenB })).toBe(false);
+  });
+});
+
+fdescribe('edit', () => {
+  it('allows editing a value', () => {
+    const input = JSON.stringify({ keyA: 'value1', keyB: 'value2' });
+    const inputResult = destringify(input);
+    const { result, map } = inputResult;
+    const edited = {...result, keyA: 'value3' };
+    const editedStringified = restringify({ result: edited, map });
+    expect(editedStringified).toEqual(JSON.stringify({ keyA: 'value3', keyB: 'value2' }));
+  });
+
+  it('allows deleting an object property', () => {
+    const input = JSON.stringify({ keyA: 'value1', keyB: 'value2' });
+    const inputResult = destringify(input);
+    const { result, map } = inputResult;
+    const { keyA, ...edited } = result;
+    const editedStringified = restringify({ result: edited, map });
+    expect(editedStringified).toEqual(JSON.stringify({ keyB: 'value2' }));
+  });
+
+  it('allows deleting an object property that has children', () => {
+    const input = JSON.stringify({ keyA: { property: JSON.stringify('value1') }, keyB: 'value2' });
+    const inputResult = destringify(input);
+    const { result, map } = inputResult;
+    const { keyA, ...edited } = result;
+    const editedStringified = restringify({ result: edited, map });
+    expect(editedStringified).toEqual(JSON.stringify({ keyB: 'value2' }));
+  });
+
+  it('allows deleting an array element', () => {
+    const input = JSON.stringify(['value1', 'value2']);
+    const inputResult = destringify(input);
+    const { result, map } = inputResult;
+    const edited = ['value3', result[1]]
+    const editedStringified = restringify({ result: edited, map });
+    expect(editedStringified).toEqual(JSON.stringify(['value3', 'value2']));
+  });
+
+  it('allows deleting an array element that has children', () => {
+    const input = JSON.stringify([[JSON.stringify('value1')], 'value2']);
+    // const input = JSON.stringify({ keyA: { property: 'value1' }, keyB: 'value2' });
+    const inputResult = destringify(input);
+    const { result, map } = inputResult;
+    const edited = [null, result[1]]
+    const editedStringified = restringify({ result: edited, map });
+    expect(editedStringified).toEqual(JSON.stringify([null, 'value2']));
   });
 });
