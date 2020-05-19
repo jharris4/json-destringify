@@ -1,4 +1,4 @@
-import { destringify, restringify, isMapEqual } from '../src/index';
+import { destringify, restringify, isTreeEqual } from '../src/index';
 
 describe('json-destringify', () => {
   const simpleValues = [
@@ -27,13 +27,13 @@ describe('json-destringify', () => {
     for (let i = 0; i < count; i++) {
       stringified = JSON.stringify(stringified);
     }
-    const { result, map } = destringifyWithOptions(stringified);
+    const { result, tree } = destringifyWithOptions(stringified);
     // console.log('#### value: ', value);
     // console.log('#### result: ', result);
-    // console.log('#### map: ', map);
+    // console.log('#### tree: ', tree);
     expect(result).toEqual(expected);
-    expect(map).toEqual({ count });
-    expect(restringify({ result, map })).toEqual(stringified);
+    expect(tree).toEqual({ count });
+    expect(restringify({ result, tree })).toEqual(stringified);
   };
 
   const testDeReStringifyPair = ({ root, key }, rootCount, { value, expected }, count) => {
@@ -46,11 +46,11 @@ describe('json-destringify', () => {
       stringified = JSON.stringify(stringified);
     }
     
-    const { result, map } = destringifyWithOptions(stringified);
-    const json = restringify({ result, map });
+    const { result, tree } = destringifyWithOptions(stringified);
+    const json = restringify({ result, tree });
 
     expect(result).toEqual(Array.isArray(root) ? [ ...root, expected ] : { ...root, [key]: expected });
-    expect(map).toEqual({
+    expect(tree).toEqual({
       count: rootCount,
       ...(count > 0 ? { children: Array.isArray(root) ? [{ count }] : { [key]: { count } } } : {})
     });
@@ -71,16 +71,16 @@ describe('json-destringify', () => {
       stringifiedRoot = JSON.stringify(stringifiedRoot);
     }
 
-    const { result, map } = destringifyWithOptions(stringifiedRoot);
-    const json = restringify({ result, map });
+    const { result, tree } = destringifyWithOptions(stringifiedRoot);
+    const json = restringify({ result, tree });
 
     const expectedMiddleResult = Array.isArray(middleRoot) ? [ ...middleRoot, expected ] : { ...middleRoot, [middleKey]: expected };
     const expectedResult = Array.isArray(root) ? [ ...root, expectedMiddleResult ] : { ...root, [key]: expectedMiddleResult };
-    const expectedMiddleMapChildren = count > 0 ? { children: Array.isArray(middleRoot) ? [{ count }] : { [middleKey]: { count } } } : {};
-    const expectedMapChildren = middleCount > 0 || count > 0 ? { children: Array.isArray(root) ? [{ count: middleCount, ...expectedMiddleMapChildren }] : { [key]: { count: middleCount, ...expectedMiddleMapChildren } } } : {};
-    const expectedMap = { count: rootCount, ...expectedMapChildren };
+    const expectedMiddleTreeChildren = count > 0 ? { children: Array.isArray(middleRoot) ? [{ count }] : { [middleKey]: { count } } } : {};
+    const expectedTreeChildren = middleCount > 0 || count > 0 ? { children: Array.isArray(root) ? [{ count: middleCount, ...expectedMiddleTreeChildren }] : { [key]: { count: middleCount, ...expectedMiddleTreeChildren } } } : {};
+    const expectedTree = { count: rootCount, ...expectedTreeChildren };
     expect(result).toEqual(expectedResult);
-    expect(map).toEqual(expectedMap);
+    expect(tree).toEqual(expectedTree);
     expect(json).toEqual(stringifiedRoot);
   };
 
@@ -125,7 +125,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {},
-      map: {
+      tree: {
         count: 2
       }
     });
@@ -138,7 +138,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: "",
-      map: {
+      tree: {
         count: 2
       }
     });
@@ -151,7 +151,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 'abc',
-      map: {
+      tree: {
         count: 1
       }
     });
@@ -164,7 +164,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 123,
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -177,7 +177,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 123,
-      map: {
+      tree: {
         count: 1
       }
     });
@@ -190,7 +190,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 123,
-      map: {
+      tree: {
         count: 2
       }
     });
@@ -203,7 +203,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {},
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -218,7 +218,7 @@ describe('json-destringify', () => {
       result: {
         property: 'value'
       },
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -233,7 +233,7 @@ describe('json-destringify', () => {
       result: {
         '"property"': 'value'
       },
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -248,7 +248,7 @@ describe('json-destringify', () => {
       result: {
         property: 'value'
       },
-      map: {
+      tree: {
         count: 0,
         children: {
           property: {
@@ -268,7 +268,7 @@ describe('json-destringify', () => {
       result: {
         property: 123
       },
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -283,7 +283,7 @@ describe('json-destringify', () => {
       result: {
         property: 123
       },
-      map: {
+      tree: {
         count: 0,
         children: {
           property: {
@@ -306,7 +306,7 @@ describe('json-destringify', () => {
           nestProperty: 'nestedValue'
         }
       },
-      map: {
+      tree: {
         count: 2,
         children: {
           nested: {
@@ -329,7 +329,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: ['a', 'b', 'c'],
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -342,7 +342,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: [{ a: 1 }, { b: true }, { c: 'aString' }],
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -355,7 +355,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: [{ a: 1 }, { b: true }, { c: 'aString' }],
-      map: {
+      tree: {
         count: 0,
         children: [
           {
@@ -392,7 +392,7 @@ describe('json-destringify', () => {
           }
         }
       ],
-      map: {
+      tree: {
         count: 2,
         children: [
           {
@@ -424,7 +424,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
 
     const expectedContent = { property: true };
-    const expectedContentMap = {
+    const expectedContentTree = {
       count: 0,
       children: {
         property: {
@@ -439,12 +439,12 @@ describe('json-destringify', () => {
         expectedContent,
         expectedContent
       ],
-      map: {
+      tree: {
         count: 0,
         children: [
-          expectedContentMap,
-          expectedContentMap,
-          expectedContentMap
+          expectedContentTree,
+          expectedContentTree,
+          expectedContentTree
         ]
       }
     });
@@ -465,7 +465,7 @@ describe('json-destringify', () => {
         expectedContent,
         expectedContent
       ],
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -479,7 +479,7 @@ describe('json-destringify', () => {
     const inputResult = destringifyWithOptions(input);
 
     const expectedContent = true;
-    const expectedContentMap = {
+    const expectedContentTree = {
       count: 1
     };
 
@@ -491,15 +491,15 @@ describe('json-destringify', () => {
           expectedContent
         ]
       },
-      map: {
+      tree: {
         count: 0,
         children: {
           property: {
             count: 0,
             children: [
-              expectedContentMap,
-              expectedContentMap,
-              expectedContentMap
+              expectedContentTree,
+              expectedContentTree,
+              expectedContentTree
             ]
           }
         }
@@ -524,7 +524,7 @@ describe('json-destringify', () => {
           expectedContent
         ]
       },
-      map: {
+      tree: {
         count: 0
       }
     });
@@ -533,42 +533,42 @@ describe('json-destringify', () => {
   });
 });
 
-describe('isMapEqual', () => {
-  it('does match two maps with same counts', () => {
+describe('isTreeEqual', () => {
+  it('does match two trees with same counts', () => {
     const count = 0;
-    expect(isMapEqual({ count }, { count })).toBe(true);
+    expect(isTreeEqual({ count }, { count })).toBe(true);
   });
 
-  it('does not match two maps with different counts', () => {
+  it('does not match two trees with different counts', () => {
     const countA = 0;
     const countB = 1;
-    expect(isMapEqual({ count: countA }, { count: countB })).toBe(false);
+    expect(isTreeEqual({ count: countA }, { count: countB })).toBe(false);
   });
 
-  it('does match two maps with same counts and same object children', () => {
+  it('does match two trees with same counts and same object children', () => {
     const count = 0;
     const children = { property: { count: 1 } };
-    expect(isMapEqual({ count, children: {...children} }, { count, children: {...children} })).toBe(true);
+    expect(isTreeEqual({ count, children: {...children} }, { count, children: {...children} })).toBe(true);
   });
 
-  it('does not match two maps with same counts and different object children', () => {
+  it('does not match two trees with same counts and different object children', () => {
     const count = 0;
     const childrenA = { property: { count: 1 } };
     const childrenB = { property: { count: 2 } };
-    expect(isMapEqual({ count, children: childrenA }, { count, children: childrenB })).toBe(false);
+    expect(isTreeEqual({ count, children: childrenA }, { count, children: childrenB })).toBe(false);
   });
 
-  it('does match two maps with same counts and same array children', () => {
+  it('does match two trees with same counts and same array children', () => {
     const count = 0;
     const children = [{ count: 1 }];
-    expect(isMapEqual({ count, children: {...children} }, { count, children: {...children} })).toBe(true);
+    expect(isTreeEqual({ count, children: {...children} }, { count, children: {...children} })).toBe(true);
   });
 
-  it('does not match two maps with same counts and different array children', () => {
+  it('does not match two trees with same counts and different array children', () => {
     const count = 0;
     const childrenA = [{ count: 1 }];
     const childrenB = [{ count: 2 }];
-    expect(isMapEqual({ count, children: childrenA }, { count, children: childrenB })).toBe(false);
+    expect(isTreeEqual({ count, children: childrenA }, { count, children: childrenB })).toBe(false);
   });
 });
 
@@ -583,45 +583,45 @@ describe('edit', () => {
   it('allows editing a value', () => {
     const input = JSON.stringify({ keyA: 'value1', keyB: 'value2' });
     const inputResult = destringifyWithOptions(input);
-    const { result, map } = inputResult;
+    const { result, tree } = inputResult;
     const edited = {...result, keyA: 'value3' };
-    const editedStringified = restringify({ result: edited, map });
+    const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify({ keyA: 'value3', keyB: 'value2' }));
   });
 
   it('allows deleting an object property', () => {
     const input = JSON.stringify({ keyA: 'value1', keyB: 'value2' });
     const inputResult = destringifyWithOptions(input);
-    const { result, map } = inputResult;
+    const { result, tree } = inputResult;
     const { keyA, ...edited } = result;
-    const editedStringified = restringify({ result: edited, map });
+    const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify({ keyB: 'value2' }));
   });
 
   it('allows deleting an object property that has children', () => {
     const input = JSON.stringify({ keyA: { property: JSON.stringify('value1') }, keyB: 'value2' });
     const inputResult = destringifyWithOptions(input);
-    const { result, map } = inputResult;
+    const { result, tree } = inputResult;
     const { keyA, ...edited } = result;
-    const editedStringified = restringify({ result: edited, map });
+    const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify({ keyB: 'value2' }));
   });
 
   it('allows deleting an array element', () => {
     const input = JSON.stringify(['value1', 'value2']);
     const inputResult = destringifyWithOptions(input);
-    const { result, map } = inputResult;
+    const { result, tree } = inputResult;
     const edited = ['value3', result[1]]
-    const editedStringified = restringify({ result: edited, map });
+    const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify(['value3', 'value2']));
   });
 
   it('allows deleting an array element that has children', () => {
     const input = JSON.stringify([[JSON.stringify('value1')], 'value2']);
     const inputResult = destringifyWithOptions(input);
-    const { result, map } = inputResult;
+    const { result, tree } = inputResult;
     const edited = [null, result[1]]
-    const editedStringified = restringify({ result: edited, map });
+    const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify([null, 'value2']));
   });
 });
