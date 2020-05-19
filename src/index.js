@@ -29,18 +29,11 @@ export const isMapEqual = (mapA, mapB) => {
 
 export const DEFAULT_OPTIONS = {
   groupChildren: true,
-  parseTypes: [
-    'string',
-    'object',
-    'array'
-  ]
+  shouldParse: (value, type) => type === 'string' || type === 'array' || type === 'object'
 };
 
-const matchParseType = (value,  {parseTypes = {}} = options = {}) => {
-  const typeOf = Array.isArray(value) ? 'array' : typeof value;
-  // console.log('\n\n\n$$$$ here: ', value, parseTypes);
-  return !parseTypes || parseTypes.some(type => type === typeOf);
-};
+const shouldParse = (value,  { shouldParse }) =>
+  shouldParse(value, Array.isArray(value) ? 'array' : typeof value);
 
 export const destringify = (target, paramOptions = {}) => {
   const options = {...DEFAULT_OPTIONS, ...paramOptions};
@@ -50,7 +43,7 @@ export const destringify = (target, paramOptions = {}) => {
     case 'string':
       try {
         const parsed = JSON.parse(target);
-        if (parsed !== target && matchParseType(parsed, options)) {
+        if (parsed !== target && shouldParse(parsed, options)) {
           const { result, map } = destringify(parsed, options);
           
           parseResult = result;

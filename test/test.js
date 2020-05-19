@@ -16,7 +16,7 @@ describe('json-destringify', () => {
   ];
   
   const options = {
-    parseTypes: null,
+    shouldParse: () => true,
     groupChildren: false
   };
 
@@ -168,7 +168,7 @@ describe('json-destringify', () => {
         count: 0
       }
     });
-    const json = restringify(inputResult, { parseTypes: ['number'] });
+    const json = restringify(inputResult);
     expect(input).toEqual(json);
   });
 
@@ -574,7 +574,7 @@ describe('isMapEqual', () => {
 
 describe('edit', () => {
   const options = {
-    parseTypes: null,
+    shouldParse: () => true,
     groupChildren: false
   };
 
