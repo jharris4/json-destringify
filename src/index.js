@@ -1,8 +1,8 @@
-const MAP_DEFAULT = { count: 0 };
+const TREE_DEFAULT = { count: 0 };
 
-export const isMapEqual = (mapA, mapB) => {
-  const a = mapA || MAP_DEFAULT;
-  const b = mapB || MAP_DEFAULT;
+export const isTreeEqual = (treeA, treeB) => {
+  const a = treeA || TREE_DEFAULT;
+  const b = treeB || TREE_DEFAULT;
   if (
     a.count !== b.count ||
     typeof a.children !== typeof b.children ||
@@ -14,14 +14,14 @@ export const isMapEqual = (mapA, mapB) => {
       if (a.length !== b.length) {
         return false;
       }
-      return !a.children.some((child, i) => !isMapEqual(child, b.children[i]));
+      return !a.children.some((child, i) => !isTreeEqual(child, b.children[i]));
     } else {
       const aKeys = Object.keys(a.children);
       const bKeys = Object.keys(b.children);
       if (aKeys.length !== bKeys.length) {
         return false;
       }
-      return !aKeys.some(aKey => !isMapEqual(a.children[aKey], b.children[aKey])) && !bKeys.some(bKey => !isMapEqual(a.children[bKey], b.children[bKey]));
+      return !aKeys.some(aKey => !isTreeEqual(a.children[aKey], b.children[aKey])) && !bKeys.some(bKey => !isTreeEqual(a.children[bKey], b.children[bKey]));
     }
   }
   return true;
@@ -38,18 +38,18 @@ const shouldParse = (value,  { shouldParse }) =>
 export const destringify = (target, paramOptions = {}) => {
   const options = {...DEFAULT_OPTIONS, ...paramOptions};
   let parseResult = target;
-  let parseMap = MAP_DEFAULT;
+  let parseTree = TREE_DEFAULT;
   switch (typeof target) {
     case 'string':
       try {
         const parsed = JSON.parse(target);
         if (parsed !== target && shouldParse(parsed, options)) {
-          const { result, map } = destringify(parsed, options);
+          const { result, tree } = destringify(parsed, options);
           
           parseResult = result;
-          parseMap = {
-            ...map,
-            count: map.count + 1
+          parseTree = {
+            ...tree,
+            count: tree.count + 1
           };
         }
       } catch (ex) { /* ignore json parse error */ }
@@ -61,19 +61,19 @@ export const destringify = (target, paramOptions = {}) => {
       if (Array.isArray(target)) {
         if (target.length > 0) {
           const parsedElements = target.map(targetElement => destringify(targetElement, options));
-          let arrayChildrenMap = parsedElements.map(({ map }) => map);
+          let arrayChildrenTree = parsedElements.map(({ tree }) => tree);
           parseResult = parsedElements.map(({ result }) => result);
-          if (arrayChildrenMap && arrayChildrenMap.length > 0 && arrayChildrenMap.some(map => map !== MAP_DEFAULT)) {
-            const firstMap = arrayChildrenMap[0];
-            if (groupChildren && !arrayChildrenMap.some(map => !isMapEqual(firstMap, map))) {
-              parseMap = {
-                ...parseMap,
-                groupChildren: firstMap
+          if (arrayChildrenTree && arrayChildrenTree.length > 0 && arrayChildrenTree.some(tree => tree !== TREE_DEFAULT)) {
+            const firstTree = arrayChildrenTree[0];
+            if (groupChildren && !arrayChildrenTree.some(tree => !isTreeEqual(firstTree, tree))) {
+              parseTree = {
+                ...parseTree,
+                groupChildren: firstTree
               };
             } else {
-              parseMap = {
-                ...parseMap,
-                children: arrayChildrenMap
+              parseTree = {
+                ...parseTree,
+                children: arrayChildrenTree
               };
             }
           }
@@ -89,34 +89,34 @@ export const destringify = (target, paramOptions = {}) => {
             m[k] = parsedPropertyValues[k].result;
             return m;
           }, {});
-          const mapChildren = keys.reduce((m, k) => {
-            const { map: mapChild } = parsedPropertyValues[k];
-            if (mapChild !== MAP_DEFAULT) {
-              if (mapChild.count > 0) {
+          const treeChildren = keys.reduce((m, k) => {
+            const { tree: treeChild } = parsedPropertyValues[k];
+            if (treeChild !== TREE_DEFAULT) {
+              if (treeChild.count > 0) {
                 m[k] = {
-                  count: mapChild.count
+                  count: treeChild.count
                 };
               }
-              if (mapChild.children !== undefined && Object.keys(mapChild.children).some(key => mapChild.children[key] !== MAP_DEFAULT)) {
+              if (treeChild.children !== undefined && Object.keys(treeChild.children).some(key => treeChild.children[key] !== TREE_DEFAULT)) {
                 m[k] = {
-                  ...mapChild
+                  ...treeChild
                 };
               }
             }
             return m;
           }, {});
-          if (mapChildren && Object.keys(mapChildren).length > 0) {
-            const keys = Object.keys(mapChildren);
-            const firstKeyMap = mapChildren[keys[0]];
-            if (groupChildren && !keys.some(key => !isMapEqual(firstKeyMap, mapChildren[key]))) {
-              parseMap = {
-                ...parseMap,
-                groupChildren: firstKeyMap
+          if (treeChildren && Object.keys(treeChildren).length > 0) {
+            const keys = Object.keys(treeChildren);
+            const firstKeyTree = treeChildren[keys[0]];
+            if (groupChildren && !keys.some(key => !isTreeEqual(firstKeyTree, treeChildren[key]))) {
+              parseTree = {
+                ...parseTree,
+                groupChildren: firstKeyTree
               };
             } else {
-              parseMap = {
-                ...parseMap,
-                children: mapChildren
+              parseTree = {
+                ...parseTree,
+                children: treeChildren
               };
             }
           }
@@ -126,37 +126,37 @@ export const destringify = (target, paramOptions = {}) => {
   }
   return {
     result: parseResult,
-    map: parseMap
+    tree: parseTree
   };
 };
 
-export const restringify = ({ result, map }) => {
+export const restringify = ({ result, tree }) => {
   let json = result;
 
-  const { count, children, groupChildren } = map;
+  const { count, children, groupChildren } = tree;
   if (typeof result === 'object') {
     if (groupChildren) {
       if (Array.isArray(result)) {
         result.forEach(resultElement => {
-          json.push(restringify({ result: resultElement, map: groupChildren }));
+          json.push(restringify({ result: resultElement, tree: groupChildren }));
         });
       } else if (result) {
         json = {};
         Object.keys(result).forEach(key => {
-          json[key] = restringify({ result: result[key], map: groupChildren });
+          json[key] = restringify({ result: result[key], tree: groupChildren });
         });
       }
     } else if (children) {
       if (Array.isArray(children) && Array.isArray(result)) {
         json = [];
-        children.forEach((map, i) => {
-          json.push(restringify({ result: result[i], map }));
+        children.forEach((tree, i) => {
+          json.push(restringify({ result: result[i], tree }));
         });
       } else if (children && result) {
         json = {};
         Object.keys(result).forEach(key => {
           if (children[key]) {
-            json[key] = restringify({ result: result[key], map: children[key] });
+            json[key] = restringify({ result: result[key], tree: children[key] });
           }
           else {
             json[key] = result[key];
