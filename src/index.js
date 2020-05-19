@@ -28,7 +28,7 @@ export const isMapEqual = (mapA, mapB) => {
 };
 
 export const DEFAULT_OPTIONS = {
-  strict: false,
+  groupChildren: true,
   parseTypes: [
     'string',
     'object',
@@ -42,7 +42,8 @@ const matchParseType = (value,  {parseTypes = {}} = options = {}) => {
   return !parseTypes || parseTypes.some(type => type === typeOf);
 };
 
-export const destringify = (target, options = DEFAULT_OPTIONS) => {
+export const destringify = (target, paramOptions = {}) => {
+  const options = {...DEFAULT_OPTIONS, ...paramOptions};
   let parseResult = target;
   let parseMap = MAP_DEFAULT;
   switch (typeof target) {
@@ -63,7 +64,7 @@ export const destringify = (target, options = DEFAULT_OPTIONS) => {
     case 'number':
       break;
     case 'object':
-      const { strict } = options;
+      const { groupChildren } = options;
       if (Array.isArray(target)) {
         if (target.length > 0) {
           const parsedElements = target.map(targetElement => destringify(targetElement, options));
@@ -71,10 +72,10 @@ export const destringify = (target, options = DEFAULT_OPTIONS) => {
           parseResult = parsedElements.map(({ result }) => result);
           if (arrayChildrenMap && arrayChildrenMap.length > 0 && arrayChildrenMap.some(map => map !== MAP_DEFAULT)) {
             const firstMap = arrayChildrenMap[0];
-            if (!strict && !arrayChildrenMap.some(map => !isMapEqual(firstMap, map))) {
+            if (groupChildren && !arrayChildrenMap.some(map => !isMapEqual(firstMap, map))) {
               parseMap = {
                 ...parseMap,
-                allChildren: firstMap
+                groupChildren: firstMap
               };
             } else {
               parseMap = {
@@ -114,10 +115,10 @@ export const destringify = (target, options = DEFAULT_OPTIONS) => {
           if (mapChildren && Object.keys(mapChildren).length > 0) {
             const keys = Object.keys(mapChildren);
             const firstKeyMap = mapChildren[keys[0]];
-            if (!strict && !keys.some(key => !isMapEqual(firstKeyMap, mapChildren[key]))) {
+            if (groupChildren && !keys.some(key => !isMapEqual(firstKeyMap, mapChildren[key]))) {
               parseMap = {
                 ...parseMap,
-                allChildren: firstKeyMap
+                groupChildren: firstKeyMap
               };
             } else {
               parseMap = {
@@ -139,27 +140,22 @@ export const destringify = (target, options = DEFAULT_OPTIONS) => {
 export const restringify = ({ result, map }) => {
   let json = result;
 
-  const { count, children, allChildren } = map;
+  const { count, children, groupChildren } = map;
   if (typeof result === 'object') {
-    if (allChildren) {
+    if (groupChildren) {
       if (Array.isArray(result)) {
         result.forEach(resultElement => {
-          json.push(restringify({ result: resultElement, map: allChildren }));
+          json.push(restringify({ result: resultElement, map: groupChildren }));
         });
       } else if (result) {
         json = {};
         Object.keys(result).forEach(key => {
-          json[key] = restringify({ result: result[key], map: allChildren });
+          json[key] = restringify({ result: result[key], map: groupChildren });
         });
       }
     } else if (children) {
       if (Array.isArray(children) && Array.isArray(result)) {
         json = [];
-        if (allChildren) {
-          result.forEach(resultElement => {
-            json.push(restringify({ result: resultElement, map }));
-          });
-        }
         children.forEach((map, i) => {
           json.push(restringify({ result: result[i], map }));
         });

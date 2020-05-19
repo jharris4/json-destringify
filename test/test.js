@@ -17,7 +17,7 @@ describe('json-destringify', () => {
   
   const options = {
     parseTypes: null,
-    strict: true
+    groupChildren: false
   };
 
   const destringifyWithOptions = stringified => destringify(stringified, options);
@@ -575,7 +575,7 @@ describe('isMapEqual', () => {
 describe('edit', () => {
   const options = {
     parseTypes: null,
-    strict: true
+    groupChildren: false
   };
 
   const destringifyWithOptions = stringified => destringify(stringified, options);
