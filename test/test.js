@@ -1,26 +1,33 @@
 import { destringify, restringify, isMapEqual } from '../src/index';
 
-const simpleValues = [
-  { value: 'a', expected: 'a' },
-  { value: 3, expected: 3 },
-  { value: true, expected: true },
-  { value: [], expected: [] },
-  { value: {}, expected: {} },
-  { value: null, expected: null }
-];
-
-const rootValues = [
-  { root: {}, key: 'property' },
-  { root: [], key: 0 }
-];
-
 describe('json-destringify', () => {
+  const simpleValues = [
+    { value: 'a', expected: 'a' },
+    { value: 3, expected: 3 },
+    { value: true, expected: true },
+    { value: [], expected: [] },
+    { value: {}, expected: {} },
+    { value: null, expected: null }
+  ];
+  
+  const rootValues = [
+    { root: {}, key: 'property' },
+    { root: [] }
+  ];
+  
+  const options = {
+    parseTypes: null,
+    strict: true
+  };
+
+  const destringifyWithOptions = stringified => destringify(stringified, options);
+
   const testDeReStringifySimple = ({ value, expected }, count) => {
     let stringified = value;
     for (let i = 0; i < count; i++) {
       stringified = JSON.stringify(stringified);
     }
-    const { result, map } = destringify(stringified);
+    const { result, map } = destringifyWithOptions(stringified);
     // console.log('#### value: ', value);
     // console.log('#### result: ', result);
     // console.log('#### map: ', map);
@@ -39,7 +46,7 @@ describe('json-destringify', () => {
       stringified = JSON.stringify(stringified);
     }
     
-    const { result, map } = destringify(stringified);
+    const { result, map } = destringifyWithOptions(stringified);
     const json = restringify({ result, map });
 
     expect(result).toEqual(Array.isArray(root) ? [ ...root, expected ] : { ...root, [key]: expected });
@@ -64,7 +71,7 @@ describe('json-destringify', () => {
       stringifiedRoot = JSON.stringify(stringifiedRoot);
     }
 
-    const { result, map } = destringify(stringifiedRoot);
+    const { result, map } = destringifyWithOptions(stringifiedRoot);
     const json = restringify({ result, map });
 
     const expectedMiddleResult = Array.isArray(middleRoot) ? [ ...middleRoot, expected ] : { ...middleRoot, [middleKey]: expected };
@@ -115,7 +122,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a stringified object string', () => {
     const input = JSON.stringify('{}');
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {},
       map: {
@@ -128,7 +135,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a double stringified string', () => {
     const input = JSON.stringify(JSON.stringify(''));
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: "",
       map: {
@@ -141,7 +148,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a quoted string', () => {
     const input = '"abc"';
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 'abc',
       map: {
@@ -154,20 +161,20 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a number', () => {
     const input = 123;
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 123,
       map: {
         count: 0
       }
     });
-    const json = restringify(inputResult);
+    const json = restringify(inputResult, { parseTypes: ['number'] });
     expect(input).toEqual(json);
   });
 
   it('destringifies and restringifies a string number', () => {
     const input = '123';
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 123,
       map: {
@@ -180,7 +187,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a quoted number', () => {
     const input = '"123"';
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: 123,
       map: {
@@ -193,7 +200,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an empty object', () => {
     const input = {};
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {},
       map: {
@@ -206,7 +213,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an object with a property', () => {
     const input = { property: 'value' };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {
         property: 'value'
@@ -221,7 +228,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an object with a quoted property', () => {
     const input = { '"property"': 'value' };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {
         '"property"': 'value'
@@ -236,7 +243,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an object with a quoted value', () => {
     const input = { property: '"value"' };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {
         property: 'value'
@@ -256,7 +263,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an object with a number value', () => {
     const input = { property: 123 };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {
         property: 123
@@ -271,7 +278,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an object with a string number value', () => {
     const input = { property: '123' };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {
         property: 123
@@ -291,7 +298,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a doubly stringified object with nested stringified values', () => {
     const input = JSON.stringify(JSON.stringify({ property: "value", nested: { nestProperty: JSON.stringify("nestedValue") } }));
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: {
         property: 'value',
@@ -319,7 +326,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an array with multiple strings', () => {
     const input = ['a', 'b', 'c'];
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: ['a', 'b', 'c'],
       map: {
@@ -332,7 +339,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an array with multiple objects with properties', () => {
     const input = [{ a: 1 }, { b: true }, { c: 'aString' }];
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: [{ a: 1 }, { b: true }, { c: 'aString' }],
       map: {
@@ -345,7 +352,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies an array with multiple objects with some stringified properties', () => {
     const input = [{ a: 1 }, { b: true }, { c: JSON.stringify('aString') }];
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: [{ a: 1 }, { b: true }, { c: 'aString' }],
       map: {
@@ -374,7 +381,7 @@ describe('json-destringify', () => {
 
   it('destringifies and restringifies a doubly stringified array with nested stringified values', () => {
     const input = JSON.stringify(JSON.stringify(['abc', { property: 'value', nested: { nestProperty: JSON.stringify('nestedValue') } }]));
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     expect(inputResult).toEqual({
       result: [
         'abc',
@@ -414,7 +421,7 @@ describe('json-destringify', () => {
   it('destringifies and restringifies an array with some stringified elements', () => {
     const content = { property: JSON.stringify(true) };
     const input = [{...content}, {...content}, {...content}];
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
 
     const expectedContent = { property: true };
     const expectedContentMap = {
@@ -448,7 +455,7 @@ describe('json-destringify', () => {
   it('destringifies and restringifies an array with no stringified elements', () => {
     const content = { property: true };
     const input = [{...content}, {...content}, {...content}];
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
 
     const expectedContent = { property: true };
 
@@ -469,7 +476,7 @@ describe('json-destringify', () => {
   it('destringifies and restringifies an object with some stringified property values', () => {
     const content = JSON.stringify(true);
     const input = { property: [content, content, content] };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
 
     const expectedContent = true;
     const expectedContentMap = {
@@ -505,7 +512,7 @@ describe('json-destringify', () => {
   it('destringifies and restringifies an object with no stringified property values', () => {
     const content = true;
     const input = { property: [content, content, content] };
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
 
     const expectedContent = true;
 
@@ -565,10 +572,17 @@ describe('isMapEqual', () => {
   });
 });
 
-fdescribe('edit', () => {
+describe('edit', () => {
+  const options = {
+    parseTypes: null,
+    strict: true
+  };
+
+  const destringifyWithOptions = stringified => destringify(stringified, options);
+
   it('allows editing a value', () => {
     const input = JSON.stringify({ keyA: 'value1', keyB: 'value2' });
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     const { result, map } = inputResult;
     const edited = {...result, keyA: 'value3' };
     const editedStringified = restringify({ result: edited, map });
@@ -577,7 +591,7 @@ fdescribe('edit', () => {
 
   it('allows deleting an object property', () => {
     const input = JSON.stringify({ keyA: 'value1', keyB: 'value2' });
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     const { result, map } = inputResult;
     const { keyA, ...edited } = result;
     const editedStringified = restringify({ result: edited, map });
@@ -586,7 +600,7 @@ fdescribe('edit', () => {
 
   it('allows deleting an object property that has children', () => {
     const input = JSON.stringify({ keyA: { property: JSON.stringify('value1') }, keyB: 'value2' });
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     const { result, map } = inputResult;
     const { keyA, ...edited } = result;
     const editedStringified = restringify({ result: edited, map });
@@ -595,7 +609,7 @@ fdescribe('edit', () => {
 
   it('allows deleting an array element', () => {
     const input = JSON.stringify(['value1', 'value2']);
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     const { result, map } = inputResult;
     const edited = ['value3', result[1]]
     const editedStringified = restringify({ result: edited, map });
@@ -604,8 +618,7 @@ fdescribe('edit', () => {
 
   it('allows deleting an array element that has children', () => {
     const input = JSON.stringify([[JSON.stringify('value1')], 'value2']);
-    // const input = JSON.stringify({ keyA: { property: 'value1' }, keyB: 'value2' });
-    const inputResult = destringify(input);
+    const inputResult = destringifyWithOptions(input);
     const { result, map } = inputResult;
     const edited = [null, result[1]]
     const editedStringified = restringify({ result: edited, map });

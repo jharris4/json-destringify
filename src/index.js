@@ -27,15 +27,31 @@ export const isMapEqual = (mapA, mapB) => {
   return true;
 };
 
-export const destringify = (target) => {
+export const DEFAULT_OPTIONS = {
+  strict: false,
+  parseTypes: [
+    'string',
+    'object',
+    'array'
+  ]
+};
+
+const matchParseType = (value,  {parseTypes = {}} = options = {}) => {
+  const typeOf = Array.isArray(value) ? 'array' : typeof value;
+  // console.log('\n\n\n$$$$ here: ', value, parseTypes);
+  return !parseTypes || parseTypes.some(type => type === typeOf);
+};
+
+export const destringify = (target, options = DEFAULT_OPTIONS) => {
   let parseResult = target;
   let parseMap = MAP_DEFAULT;
   switch (typeof target) {
     case 'string':
       try {
         const parsed = JSON.parse(target);
-        if (parsed !== target) {
-          const { result, map } = destringify(parsed);
+        if (parsed !== target && matchParseType(parsed, options)) {
+          const { result, map } = destringify(parsed, options);
+          
           parseResult = result;
           parseMap = {
             ...map,
@@ -47,23 +63,32 @@ export const destringify = (target) => {
     case 'number':
       break;
     case 'object':
+      const { strict } = options;
       if (Array.isArray(target)) {
         if (target.length > 0) {
-          const parsedElements = target.map(targetElement => destringify(targetElement));
-          let arrayChildren = parsedElements.map(({ map }) => map);
+          const parsedElements = target.map(targetElement => destringify(targetElement, options));
+          let arrayChildrenMap = parsedElements.map(({ map }) => map);
           parseResult = parsedElements.map(({ result }) => result);
-          if (arrayChildren && arrayChildren.length > 0 && arrayChildren.some(arrayElement => arrayElement !== MAP_DEFAULT)) {
-            parseMap = {
-              ...parseMap,
-              children: arrayChildren
-            };
+          if (arrayChildrenMap && arrayChildrenMap.length > 0 && arrayChildrenMap.some(map => map !== MAP_DEFAULT)) {
+            const firstMap = arrayChildrenMap[0];
+            if (!strict && !arrayChildrenMap.some(map => !isMapEqual(firstMap, map))) {
+              parseMap = {
+                ...parseMap,
+                allChildren: firstMap
+              };
+            } else {
+              parseMap = {
+                ...parseMap,
+                children: arrayChildrenMap
+              };
+            }
           }
         }
       } else if (target) {
         const keys = Object.keys(target);
         if (keys.length > 0) {
           const parsedPropertyValues = keys.reduce((m, k) => {
-            m[k] = destringify(target[k]);
+            m[k] = destringify(target[k], options);
             return m;
           }, {});
           parseResult = keys.reduce((m, k) => {
@@ -87,10 +112,19 @@ export const destringify = (target) => {
             return m;
           }, {});
           if (mapChildren && Object.keys(mapChildren).length > 0) {
-            parseMap = {
-              ...parseMap,
-              children: mapChildren
-            };
+            const keys = Object.keys(mapChildren);
+            const firstKeyMap = mapChildren[keys[0]];
+            if (!strict && !keys.some(key => !isMapEqual(firstKeyMap, mapChildren[key]))) {
+              parseMap = {
+                ...parseMap,
+                allChildren: firstKeyMap
+              };
+            } else {
+              parseMap = {
+                ...parseMap,
+                children: mapChildren
+              };
+            }
           }
         }
       }
@@ -105,24 +139,41 @@ export const destringify = (target) => {
 export const restringify = ({ result, map }) => {
   let json = result;
 
-  const { count, children } = map;
-  if (typeof children === 'object' && typeof result === 'object') {
-    if (Array.isArray(children) && Array.isArray(result)) {
-      json = [];
-      children.forEach((child, i) => {
-        json.push(restringify({ result: result[i], map: child }));
-      });
-    } else if (children && result) {
-      const keys = Object.keys(result);
-      json = {};
-      keys.forEach(key => {
-        if (children[key]) {
-          json[key] = restringify({ result: result[key], map: children[key] });
+  const { count, children, allChildren } = map;
+  if (typeof result === 'object') {
+    if (allChildren) {
+      if (Array.isArray(result)) {
+        result.forEach(resultElement => {
+          json.push(restringify({ result: resultElement, map: allChildren }));
+        });
+      } else if (result) {
+        json = {};
+        Object.keys(result).forEach(key => {
+          json[key] = restringify({ result: result[key], map: allChildren });
+        });
+      }
+    } else if (children) {
+      if (Array.isArray(children) && Array.isArray(result)) {
+        json = [];
+        if (allChildren) {
+          result.forEach(resultElement => {
+            json.push(restringify({ result: resultElement, map }));
+          });
         }
-        else {
-          json[key] = result[key];
-        }
-      });
+        children.forEach((map, i) => {
+          json.push(restringify({ result: result[i], map }));
+        });
+      } else if (children && result) {
+        json = {};
+        Object.keys(result).forEach(key => {
+          if (children[key]) {
+            json[key] = restringify({ result: result[key], map: children[key] });
+          }
+          else {
+            json[key] = result[key];
+          }
+        });
+      }
     }
   }
   for (let i = 0; i < count; i++) {
