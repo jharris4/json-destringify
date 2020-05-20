@@ -533,6 +533,98 @@ describe('json-destringify', () => {
   });
 });
 
+describe('groupChildren', () => {
+  it('does group all children when they are the same', () => {
+    const content = "true";
+    const input = { property: [content, content, content] };
+    const inputResult = destringify(input, { groupChildren: true, shouldParse: () => true });
+
+    const expectedContent = true;
+
+    expect(inputResult).toEqual({
+      result: {
+        property: [
+          expectedContent,
+          expectedContent,
+          expectedContent
+        ]
+      },
+      tree: {
+        count: 0,
+        groupChildren: {
+          count: 0,
+          groupChildren: {
+            count: 1
+          }
+        }
+      }
+    });
+    const json = restringify(inputResult);
+    expect(input).toEqual(json);
+  });
+
+  it('does not group all children when one of them is different', () => {
+    const content = "true";
+    const input = { property: [content, true, content] };
+    const inputResult = destringify(input, { groupChildren: true, shouldParse: () => true });
+
+    const expectedContent = true;
+
+    expect(inputResult).toEqual({
+      result: {
+        property: [
+          expectedContent,
+          expectedContent,
+          expectedContent
+        ]
+      },
+      tree: {
+        count: 0,
+        groupChildren: {
+          count: 0,
+          children: [
+            {
+              count: 1
+            },
+            {
+              count: 0
+            },
+            {
+              count: 1
+            }
+          ]
+        }
+      }
+    });
+    const json = restringify(inputResult);
+    expect(input).toEqual(json);
+  });
+
+  it('does not group all children of an object when one of the object values needs no parsing', () => {
+    const input = { property: "true", otherProperty: 1 };
+    const inputResult = destringify(input, { groupChildren: true, shouldParse: () => true });
+
+    console.log(JSON.stringify(inputResult));
+
+    expect(inputResult).toEqual({
+      result: {
+        property: true,
+        otherProperty: 1
+      },
+      tree: {
+        count: 0,
+        children: {
+          property: {
+            count: 1
+          }
+        }
+      }
+    });
+    const json = restringify(inputResult);
+    expect(input).toEqual(json);
+  });
+});
+
 describe('isTreeEqual', () => {
   it('does match two trees with same counts', () => {
     const count = 0;
