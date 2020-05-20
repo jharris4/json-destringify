@@ -1,5 +1,5 @@
 # json-destringify
-Parses JSON while eagerly destringifying. A stringification map is returned to allow the parsed/cleaned result to be edited and converted back to the original stringified format
+Parses JSON while eagerly destringifying. A stringification tree is returned to allow the parsed/cleaned result to be edited and converted back to the original stringified format
 
 Installation:
 ----------
@@ -45,18 +45,18 @@ import { destringify, restringify } from 'json-destringify';
 const sampleInput = JSON.stringify({ property: 'true' });
 // sampleInput = "{\"property\":\"true\"}"
 
-const { result, map } = destringify(sampleInput);
+const { result, tree } = destringify(sampleInput);
 // result = { property: true }
-// map = { count: 1, children: { property: { count: 1 } } }
+// tree = { count: 1, children: { property: { count: 1 } } }
 
-const sampleOutput = restringify({ result, map });
+const sampleOutput = restringify({ result, tree });
 // sampleOutput = "{\"property\":\"true\"}"
 
 const changedResult = {
   property: false
 };
 
-const changedOutput = restringify({ result: changedResult, map });
+const changedOutput = restringify({ result: changedResult, tree });
 // changedOutput = "{\"property\":\"false\"}"
 ```
 
@@ -86,12 +86,12 @@ const restringified = restringify(destringified);
 restringified = { property: [ '{"key":"123"}' ] }
 */
 
-const { result, map } = destringified;
+const { result, tree } = destringified;
 
 /*
 result = { property: [ { key: 123 } ] }
 
-map = {
+tree = {
   count: 0,
   children: {
     property: {
