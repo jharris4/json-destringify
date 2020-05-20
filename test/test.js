@@ -28,9 +28,7 @@ describe('json-destringify', () => {
       stringified = JSON.stringify(stringified);
     }
     const { result, tree } = destringifyWithOptions(stringified);
-    // console.log('#### value: ', value);
-    // console.log('#### result: ', result);
-    // console.log('#### tree: ', tree);
+
     expect(result).toEqual(expected);
     expect(tree).toEqual({ count });
     expect(restringify({ result, tree })).toEqual(stringified);
@@ -604,8 +602,6 @@ describe('groupChildren', () => {
     const input = { property: "true", otherProperty: 1 };
     const inputResult = destringify(input, { groupChildren: true, shouldParse: () => true });
 
-    console.log(JSON.stringify(inputResult));
-
     expect(inputResult).toEqual({
       result: {
         property: true,
@@ -622,6 +618,88 @@ describe('groupChildren', () => {
     });
     const json = restringify(inputResult);
     expect(input).toEqual(json);
+  });
+});
+
+describe('shouldParse', () => {
+  it('allows all types to be parsed', () => {
+    const input = ["\"a\"", "1", "true", "{}", "[]"];
+    const inputResult = destringify(input, { groupChildren: false, shouldParse: () => true });
+
+    expect(inputResult).toEqual({
+      result: ["a", 1, true, {}, []],
+      tree: {
+        count: 0,
+        children: [
+          {
+            count: 1
+          },
+          {
+            count: 1
+          },
+          {
+            count: 1
+          },
+          {
+            count: 1
+          },
+          {
+            count: 1
+          }
+        ]
+      }
+    });
+    const json = restringify(inputResult);
+    expect(input).toEqual(json);
+  });
+
+  it('allows specific types to be excluded from parsing', () => {
+    const input = ["\"a\"", "1", "true", "{}", "[]"];
+    const expected = ["a", 1, true, {}, []];
+
+    const shouldParses = [
+      (value, type) => type !== 'string',
+      (value, type) => type !== 'number',
+      (value, type) => type !== 'boolean',
+      (value, type) => type !== 'object',
+      (value, type) => type !== 'array'
+    ]
+
+    shouldParses.forEach((shouldParse, i) => {
+      const inputResult = destringify(input, { groupChildren: false, shouldParse });
+
+      expect(inputResult).toEqual({
+        result: [
+          i === 0 ? input[0] : expected[0],
+          i === 1 ? input[1] : expected[1],
+          i === 2 ? input[2] : expected[2],
+          i === 3 ? input[3] : expected[3],
+          i === 4 ? input[4] : expected[4]
+        ],
+        tree: {
+          count: 0,
+          children: [
+            {
+              count: i == 0 ? 0 : 1
+            },
+            {
+              count: i == 1 ? 0 : 1
+            },
+            {
+              count: i == 2 ? 0 : 1
+            },
+            {
+              count: i == 3 ? 0 : 1
+            },
+            {
+              count: i == 4 ? 0 : 1
+            }
+          ]
+        }
+      });
+      const json = restringify(inputResult);
+      expect(input).toEqual(json);
+    });
   });
 });
 
