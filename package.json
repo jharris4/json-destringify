@@ -1,6 +1,6 @@
 {
   "name": "json-destringify",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Parses JSON while eagerly destringifying. A stringification map is returned to allow the parsed/cleaned result to be edited and converted back to the original stringified format",
   "repository": "https://github.com/jharris4/json-parse-map.git",
   "author": "jharris4 <harris.jb@gmail.com>",
