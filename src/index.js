@@ -113,8 +113,8 @@ export const destringify = (target, paramOptions = {}) => {
             return m;
           }, {});
           if (treeChildren && Object.keys(treeChildren).length > 0) {
-            const keys = Object.keys(treeChildren);
-            const firstKeyTree = treeChildren[keys[0]];
+            const treeKeys = Object.keys(treeChildren);
+            const firstKeyTree = treeChildren[treeKeys[0]];
             if (groupChildren && !keys.some(key => !isTreeEqual(firstKeyTree, treeChildren[key]))) {
               parseTree = {
                 ...parseTree,
