@@ -663,7 +663,7 @@ describe('shouldParse', () => {
       (value, type) => type !== 'boolean',
       (value, type) => type !== 'object',
       (value, type) => type !== 'array'
-    ]
+    ];
 
     shouldParses.forEach((shouldParse, i) => {
       const inputResult = destringify(input, { groupChildren: false, shouldParse });
@@ -781,7 +781,7 @@ describe('edit', () => {
     const input = JSON.stringify(['value1', 'value2']);
     const inputResult = destringifyWithOptions(input);
     const { result, tree } = inputResult;
-    const edited = ['value3', result[1]]
+    const edited = ['value3', result[1]];
     const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify(['value3', 'value2']));
   });
@@ -790,7 +790,7 @@ describe('edit', () => {
     const input = JSON.stringify([[JSON.stringify('value1')], 'value2']);
     const inputResult = destringifyWithOptions(input);
     const { result, tree } = inputResult;
-    const edited = [null, result[1]]
+    const edited = [null, result[1]];
     const editedStringified = restringify({ result: edited, tree });
     expect(editedStringified).toEqual(JSON.stringify([null, 'value2']));
   });
