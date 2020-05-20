@@ -5,9 +5,15 @@ export const isTreeEqual = (treeA, treeB) => {
   const b = treeB || TREE_DEFAULT;
   if (
     a.count !== b.count ||
+    typeof a.groupChildren !== typeof b.groupChildren ||
     typeof a.children !== typeof b.children ||
     Array.isArray(a.children) !== Array.isArray(b.children)) {
     return false;
+  }
+  if (typeof a.groupChildren === 'object') {
+    if (!isTreeEqual(a.groupChildren, b.groupChildren)) {
+      return false;
+    }
   }
   if (typeof a.children === 'object') {
     if (Array.isArray(a.children)) {
@@ -97,7 +103,8 @@ export const destringify = (target, paramOptions = {}) => {
                   count: treeChild.count
                 };
               }
-              if (treeChild.children !== undefined && Object.keys(treeChild.children).some(key => treeChild.children[key] !== TREE_DEFAULT)) {
+              if (treeChild.groupChildren !== undefined || 
+                (treeChild.children !== undefined && Object.keys(treeChild.children).some(key => treeChild.children[key] !== TREE_DEFAULT))) {
                 m[k] = {
                   ...treeChild
                 };
@@ -137,6 +144,7 @@ export const restringify = ({ result, tree }) => {
   if (typeof result === 'object') {
     if (groupChildren) {
       if (Array.isArray(result)) {
+        json = [];
         result.forEach(resultElement => {
           json.push(restringify({ result: resultElement, tree: groupChildren }));
         });
