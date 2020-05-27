@@ -34,7 +34,9 @@ module.exports = {
   },
   eslint: {
     rules: {
-      "semi": ["error", "always"]
+      "semi": ["error", "always"],
+      "no-case-declarations": 0,
+      "no-unused-vars": ["error", { "ignoreRestSiblings": true }]
     },
     plugins: [
       "import"
