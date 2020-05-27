@@ -14,9 +14,9 @@
   "main": "lib/index.js",
   "module": "es/index.js",
   "devDependencies": {
-    "@porterjs/babel-register": "^2.0.6",
-    "@porterjs/jest": "^2.0.6",
-    "@porterjs/lib": "^2.0.6"
+    "@porterjs/babel-register": "^2.0.7",
+    "@porterjs/jest": "^2.0.7",
+    "@porterjs/lib": "^2.0.7"
   },
   "scripts": {
     "build": "yarn porter-babel",
